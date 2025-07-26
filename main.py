@@ -57,14 +57,6 @@ class discogsID:
         return zeros + dcid + "-6000-0000-0000-000000000000"
 
 
-'''
-def cropImg(image):
-    img = pimage.open(image)
-    img.thumbnail((480, 1008))
-
-    img.save(f"{image.rsplit('.', 1)[0]}.jpg", "jpeg")
-'''
-
 def getArtist(mbid):
     try:
         return network.get_artist_by_mbid(mbid)
@@ -194,7 +186,7 @@ def overview(mbid):
     except Exception as e:
         print(f"An error occurred: {e}")
         return "500 Internal Server Error", 500
-    
+
     #check the last time images were grabbed and determine if they need to be updated
     with open(f"artists/{artist}/lastUpdated.txt", "w+") as prevDate:
         try:
@@ -237,7 +229,6 @@ def getImg(imgID):
             'Access-Control-Allow-Origin': '*'
         }
     
-    #mbid = shortuuid.decode(f"{imgID[6:8]}{imgID[14:18]}{imgID[19:23]}{imgID[24:]}")
     try:
         mbid = discogsID.getMBID(imgID.split("-")[0])
     except ValueError:
@@ -248,7 +239,18 @@ def getImg(imgID):
     if os.path.isdir(f"artists/{artist}") == False:
         sleep(1)
         if os.path.isdir(f"artists/{artist}") == False:
-            return abort(404)
+            try:
+                Path(f"artists/{str(artist)}").mkdir()
+                print(f"Directory created successfully.")
+            except FileExistsError:
+                print(f"Directory already exists.")
+            except PermissionError:
+                print(f"Permission denied: Unable to create dir.")
+                return "500 Internal Server Error", 500
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                return "500 Internal Server Error", 500
+            threading.Thread(target = getImages, args = [discogsID.get(mbid)]).start()
 
     if int(imgID.split("-")[1]) in range(1,7) or int(imgID.split("-")[1]) == 10:
         num = int(imgID.split("-")[1])
