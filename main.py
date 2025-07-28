@@ -124,11 +124,11 @@ def writeImages(artist, imgNum, data):
     if imgNum == 0: 
         with open(f'artists/{artist}/thumb.jpg','wb') as f:
             f.write(data)
-            cropThumb(f"artists/{artist.replace("/", "-")}/thumb.jpg")
+            cropThumb(f"artists/{str(artist).replace("/", "-")}/thumb.jpg")
     else:
         with open(f'artists/{artist}/{imgNum}.jpg','wb') as f:
             f.write(data)
-            cropImg(f"artists/{artist.replace("/", "-")}/{imgNum}.jpg")
+            cropImg(f"artists/{str(artist).replace("/", "-")}/{imgNum}.jpg")
 
 
 def getImages(dcid):
@@ -160,14 +160,14 @@ def getImages(dcid):
 
     for i in range(0, imgNum):
         try:
-            writeImages(getArtist(discogsID.getMBID(dcid)).replace("/", "-"), i, imgData[i])
+            writeImages(str(getArtist(discogsID.getMBID(dcid))).replace("/", "-"), i, imgData[i])
         except AttributeError:
             if i == 0:
                 print(f"Error: Thumbnail image could not be written properly, removing file.")
-                os.remove(f"artists/{getArtist(discogsID.getMBID(dcid)).replace("/", "-")}/thumb.jpg")
+                os.remove(f"artists/{str(getArtist(discogsID.getMBID(dcid))).replace("/", "-")}/thumb.jpg")
             else:
                 print(f"Error: Image {i} could not be written properly, removing file.")
-                os.remove(f"artists/{getArtist(discogsID.getMBID(dcid)).replace("/", "-")}/{i}.jpg")
+                os.remove(f"artists/{str(getArtist(discogsID.getMBID(dcid))).replace("/", "-")}/{i}.jpg")
 
 
 @app.route("/v3.0/en-US/music/artist/<mbid>", strict_slashes=False)
@@ -188,7 +188,7 @@ def overview(mbid):
         return "500 Internal Server Error", 500
 
     #check the last time images were grabbed and determine if they need to be updated
-    with open(f"artists/{artist.replace("/", "-")}/lastUpdated.txt", "w+") as prevDate:
+    with open(f"artists/{str(artist).replace("/", "-")}/lastUpdated.txt", "w+") as prevDate:
         try:
             if (date.today() - timedelta(7)) >= datetime.strptime(prevDate.readline(), "%Y-%m-%d").date():
                 prevDate.write(str(date.today()))
@@ -213,9 +213,9 @@ def overview(mbid):
 def backgroundImage(mbid):
     artist = getArtist(mbid)
 
-    while os.path.isfile(f"artists/{artist.replace("/", "-")}/7.jpg") == False:
+    while os.path.isfile(f"artists/{str(artist).replace("/", "-")}/7.jpg") == False:
         sleep(0.5)
-    return send_file(f"artists/{artist.replace("/", "-")}/7.jpg", mimetype="image/jpeg") 
+    return send_file(f"artists/{str(artist).replace("/", "-")}/7.jpg", mimetype="image/jpeg") 
 
 
 @app.route("/v3.0/en-US/image/<imgID>/", strict_slashes=False)
@@ -236,9 +236,9 @@ def getImg(imgID):
     artist = getArtist(mbid)
 
     sleep(0.5)
-    if os.path.isdir(f"artists/{artist.replace("/", "-")}") == False:
+    if os.path.isdir(f"artists/{str(artist).replace("/", "-")}") == False:
         sleep(1)
-        if os.path.isdir(f"artists/{artist.replace("/", "-")}") == False:
+        if os.path.isdir(f"artists/{str(artist).replace("/", "-")}") == False:
             try:
                 Path(f"artists/{str(artist).replace("/", "-")}").mkdir()
                 print(f"Directory created successfully.")
@@ -258,7 +258,7 @@ def getImg(imgID):
         return abort(404)
 
     startTime = time()
-    while (os.path.isfile(f"artists/{artist.replace("/", "-")}/{num}.jpg") == False and num != 10) or os.path.isfile(f"artists/{artist.replace("/", "-")}/thumb.jpg") == False:
+    while (os.path.isfile(f"artists/{str(artist).replace("/", "-")}/{num}.jpg") == False and num != 10) or os.path.isfile(f"artists/{str(artist).replace("/", "-")}/thumb.jpg") == False:
         sleep(0.5)
         if (time() - startTime) > 6:
             print("timeout")
@@ -266,9 +266,9 @@ def getImg(imgID):
 
 
     if num == 10:
-        response = make_response(send_file(f"artists/{artist.replace("/", "-")}/thumb.jpg", mimetype="image/jpeg"))
+        response = make_response(send_file(f"artists/{str(artist).replace("/", "-")}/thumb.jpg", mimetype="image/jpeg"))
     else:
-        response = make_response(send_file(f"artists/{artist.replace("/", "-")}/{num}.jpg", mimetype="image/jpeg"))
+        response = make_response(send_file(f"artists/{str(artist).replace("/", "-")}/{num}.jpg", mimetype="image/jpeg"))
 
     response.headers = headers
     return response
@@ -339,6 +339,19 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"An error occurred: {e}")
         exit()
-    #serve(app, host="127.0.0.2", port=80)
     app.run(host="127.0.0.2", port=80)
+else:
+    print("Checking if ./artists/ exists")
+
+    try:
+        Path("artists").mkdir()
+        print("Directory ./artists/ created successfully.")
+    except FileExistsError:
+        print("Directory ./artists/ already exists.")
+    except PermissionError:
+        print("Permission denied: Unable to create directory ./artists/")
+        exit()
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        exit()
 
