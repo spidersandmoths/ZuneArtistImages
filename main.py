@@ -114,7 +114,7 @@ def cropThumb(image):
     cv2.imwrite(image, cropped_img)
 
 
-#I forgot what this did
+#Gets data from url
 def getData(url):  
     r = requests.get(url)  
     return r.text  
@@ -309,8 +309,6 @@ def bio(mbid):
 
 @app.route("/v3.0/en-US/music/artist/<mbid>/images", strict_slashes=False)
 def images(mbid):
-    #shortid = shortuuid.encode(UUID(mbid))
-    #imgID = f"000000{shortid[:2]}-0000-{shortid[2:6]}-{shortid[6:10]}-{shortid[10:]}"
     imgID = discogsID.getUUID(mbid)
     artist = getArtist(mbid)
 
